@@ -11,14 +11,14 @@
               placeholder="Search city"
               @keyup.enter="handleSearch"
             />
-
             <div
               class="suggest"
               v-bind:class="{ submit: submit }"
               ref="suggest"
+              @click="closeSuggest"
             >
               <div
-                v-show="listSuggest.length == 0"
+                v-show="listSuggest.length == 0 || v$.dataSearch.$error"
                 style="font-size: 11px; padding: 10px 5px 0"
               >
                 Not found. To make search more precise put the city's name,
@@ -49,11 +49,15 @@
 <script>
 import api from "../service/weatherAPI";
 import suggestVue from "./suggest.vue";
+import { useVuelidate } from "@vuelidate/core";
+import { required, minLength } from "@vuelidate/validators";
+
 export default {
   name: "control-vue",
   components: {
     suggestVue,
   },
+  setup: () => ({ v$: useVuelidate() }),
   data() {
     return {
       selected: "vn",
@@ -62,32 +66,48 @@ export default {
       dataSearch: "",
     };
   },
+
+  validations() {
+    return {
+      dataSearch: { required, minLength: minLength(3) }, // Matches this.firstName
+    };
+  },
   mounted() {
     document.removeEventListener("click", this.handleClickOutside, true);
   },
 
   methods: {
     async handleSearch() {
-      try {
-        const res = await api.findCountries(this.dataSearch);
-        this.listSuggest = res.data.list;
-        this.submit = true;
-        if (this.submit) {
-          console.log(this.listSuggest);
-          document.addEventListener("click", this.handleClickOutside, true);
-        } else {
-          document.removeEventListener("click", this.handleClickOutside, true);
+      this.v$.$validate();
+      console.log(this.v$.dataSearch.$error);
+      if (!this.v$.dataSearch.$error) {
+        try {
+          const res = await api.findCountries(this.dataSearch);
+          this.listSuggest = res.data.list;
+          this.submit = true;
+        } catch (error) {
+          console.log(error);
         }
-      } catch (error) {
-        console.log("asdasd", error);
+      } else {
+        this.listSuggest = [];
+        this.submit = true;
+      }
+      if (this.submit) {
+        document.addEventListener("click", this.handleClickOutside, true);
+      } else {
+        document.removeEventListener("click", this.handleClickOutside, true);
       }
     },
+
+    //Sử lý close form suggest
     handleClickOutside(event) {
-      //   console.log(!this.$refs.suggest.contains(event.target));
       if (!this.$refs.suggest.contains(event.target)) {
         this.submit = false;
         document.removeEventListener("click", this.handleClickOutside, true);
       }
+    },
+    closeSuggest() {
+      this.submit = false;
     },
   },
 };

@@ -4,10 +4,13 @@
       class="d-flex justify-content-between align-item-center"
       v-for="(item, index) in listSuggest"
       :key="index"
+      @click="getWeather(item)"
     >
       <!-- {{ item }} -->
       <div class="name parameter">{{ item.name }}, {{ item.sys.country }}</div>
-      <div class="temp parameter">{{ Math.round(item.main.temp - 273) }} °C</div>
+      <div class="temp parameter">
+        {{ Math.round(item.main.temp - 273) }} °C
+      </div>
       <div class="icon parameter">
         <img
           :src="
@@ -25,6 +28,7 @@
   </ul>
 </template>
 <script>
+import weatherAPI from "@/service/weatherAPI";
 export default {
   name: "suggest-vue",
   props: {
@@ -35,6 +39,16 @@ export default {
       list: this.listSuggest,
     };
   },
+  methods: {
+    async getWeather(item) {
+      
+      // localStorage.setItem("country", JSON.stringify(item));
+      const res = await weatherAPI.getWeather(item.coord.lat, item.coord.lon);
+      const country = await weatherAPI.getCountry(item.id);
+      this.$store.dispatch("weather/setCountry", country.data);
+      this.$store.dispatch("weather/setWeather", res.data);
+    },
+  },
 };
 </script>
 <style scoped>
@@ -43,6 +57,8 @@ export default {
   padding: 0px;
   border: 1px solid #e9e9e9;
   border-top: none;
+  z-index: 100;
+  margin: 0;
 }
 ul {
   /* background: red; */
@@ -54,7 +70,7 @@ li {
   list-style-type: none;
   padding: 0px 10px;
 }
-.name{
+.name {
   width: 30%;
 }
 .parameter {

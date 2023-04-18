@@ -15,12 +15,10 @@
 <script>
 export default {
   name: "header-vue",
-  methods: {
-   
-  }
+  methods: {},
 };
 </script>
-<style >
+<style>
 .wrapper {
   background-image: url("../assets/spring1.jpg");
   width: 100%;
